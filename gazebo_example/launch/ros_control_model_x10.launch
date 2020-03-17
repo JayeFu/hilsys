@@ -1,0 +1,30 @@
+<launch>
+    <arg name="model" default="$(find gazebo_example)/urdf/ur10_robot.urdf.xacro"/>
+    <arg name="use_gui" default="True"/>
+
+    <!-- load controller yaml -->
+    <rosparam command="load" file="$(find gazebo_example)/config/myconfig_test1.yaml"/>
+    <!-- controller manager -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" ns="/"
+        args="joint_state_controller joint1_position_controller joint2_position_controller joint3_position_controller joint4_position_controller 
+         joint5_position_controller joint6_position_controller"/>
+
+    <!-- rosparam -->
+    <param name="robot_description" command="$(find xacro)/xacro.py --inorder $(arg model)"/>
+    <!-- joint state publisher -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+    <!-- gazebo -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    </include>
+
+    <!-- spawn model -->
+    <node name="robot_gazebo_spawner" pkg="gazebo_ros" type="spawn_model" args="-urdf -model rbo -param robot_description">
+    </node>
+
+    <!-- rviz -->
+    <!--<node name="rviz" pkg="rviz" type="rviz" />-->
+
+</launch>

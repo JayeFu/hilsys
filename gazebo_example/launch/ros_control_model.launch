@@ -1,0 +1,26 @@
+<!-- -->
+<launch>
+  <arg name="use_gui" default="True"/>
+
+  <!-- gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+  </include>
+
+  <group ns="car">
+    <param name="tf_prefix" value="car_tf" />
+    <param name="robot_description" command="$(find xacro)/xacro $(find gazebo_example)/urdf/model.urdf.xacro" />
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="-x 3.0 -unpause -urdf -model robot_2 -param robot_description" respawn="false" output="screen" />
+    <!-- load controller yaml -->
+    <rosparam command="load" file="$(find gazebo_example)/config/myconfig.yaml"/>
+    <!-- controller manager -->
+    <node name="controller_spawner_car" pkg="controller_manager" type="spawner" ns="/car"
+        args="joint_state_controller wheel1_position_controller wheel2_position_controller wheel3_position_controller wheel4_position_controller"/>
+    <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+  </group>
+  <!-- rviz -->
+  <!--<node name="rviz" pkg="rviz" type="rviz" />-->
+
+</launch>

@@ -1,0 +1,102 @@
+<!--d-->
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <!--<arg name="model" default="$(find gazebo_example)/urdf/ur10_robot.urdf.xacro"/>-->
+
+  <!-- gazebo empty world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!--namespace: arm-->
+  <group ns="arm">
+    <!--param name="tf_prefix" value="arm_tf" /-->
+    <param name="robot_description" command="$(find xacro)/xacro $(find gazebo_example)/urdf/ur10_robot_x10.urdf.xacro" />
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="-x 0.0 -unpause -urdf -model fwx -param robot_description" respawn="false" output="screen" />
+    <!-- load controller yaml -->
+
+    <!-- controller manager -->
+    <!--rosparam command="load" file="$(find gazebo_example)/config/myconfig_test_x10.yaml"/>
+    <node name="controller_spawner_arm" pkg="controller_manager" type="spawner" 
+        args="joint_state_controller joint1_position_controller joint2_position_controller joint3_position_controller joint4_position_controller 
+         joint5_position_controller joint6_position_controller"/-->
+
+  <node pkg="rostopic" type="rostopic" name="fake_joint_calibration"
+        args="pub /calibrated std_msgs/Bool true" />
+  
+  <!-- joint_state_controller -->
+  <rosparam file="$(find gazebo_example)/config/joint_state_controller.yaml" command="load"/>
+  <node name="joint_state_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn joint_state_controller" respawn="false" output="screen"/>
+
+   <!--<include file="$(find neo_simulation)/config/controller/launch/controller_utils.launch"/>-->
+
+  <rosparam file="$(find gazebo_example)/config/arm_controller_ur10.yaml" command="load"/>
+  <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn arm_controller" respawn="false" output="screen"/>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+  </group>
+
+  <group ns="mbx">
+    <param name="tf_prefix" value="mbx_tf" />
+    <param name="robot_description" command="$(find xacro)/xacro $(find gazebo_example)/urdf/model_test.urdf.xacro" />
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="-x 4.0 -Y 3.14159 -unpause -urdf -model mbx -param robot_description" respawn="false" output="screen" />
+    <!-- load controller yaml -->
+    <rosparam command="load" file="$(find gazebo_example)/config/wx.yaml"/>
+    <!-- controller manager -->
+    <node name="controller_spawner_car" pkg="controller_manager" type="spawner" ns="/mbx"
+        args="wx_controller"/>
+    <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+  </group>
+  <!--wx_rotate-->
+    <node name="wx_rotate_node" pkg="gazebo_example" type="wx_rotate_node">
+      <remap from="command" to="/mbx/wx_controller/command"/>
+    </node>
+
+  <!--namespace: car-->
+  <!--group ns="car">
+    <param name="tf_prefix" value="car_tf" />
+    <param name="robot_description" command="$(find xacro)/xacro $(find gazebo_example)/urdf/model.urdf.xacro ns:=car" />
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="-x 3.0 -unpause -urdf -model car -param robot_description" respawn="false" output="screen" />
+
+    <rosparam command="load" file="$(find gazebo_example)/config/myconfig.yaml"/>
+
+    <node name="controller_spawner_car" pkg="controller_manager" type="spawner" 
+        args="joint_state_controller wheel1_position_controller wheel2_position_controller wheel3_position_controller wheel4_position_controller"/>
+    <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+  </group-->
+
+
+<!--
+  <param name="robot_description_2" command="$(find xacro)/xacro $(find gazebo_example)/urdf/model.urdf.xacro" />
+  <param name="robot_description" command="$(find xacro)/xacro $(find gazebo_example)/urdf/ur10_robot.urdf.xacro" />-->
+
+  <!-- spawn model -->
+  <!--<node name="urdf_spawner_2" pkg="gazebo_ros" type="spawn_model"
+        args="-z 1.0 -unpause -urdf -model robot_2 -param robot_description_2" respawn="false" output="screen" />
+
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="-x 3.0 -unpause -urdf -model robot -param robot_description" respawn="false" output="screen" />-->
+
+  <!--robot_state_publisher-->
+
+<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
+</launch>

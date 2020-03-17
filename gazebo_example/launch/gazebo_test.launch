@@ -1,0 +1,31 @@
+<!-- -->
+<launch>
+  <arg name="use_gui" default="True"/>
+
+  <!-- gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+  </include>
+$(find mobile_manipulator)/urdf/model.urdf.xacro
+  <group ns="mbx">
+    <param name="robot_description" command="$(find xacro)/xacro  $(find gazebo_example)/urdf/mbx_model.urdf.xacro ns:=mbx" />
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="-x 0.0 -unpause -urdf -model mbx -param robot_description" respawn="false" output="screen" />
+    <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+    <!-- load controller yaml -->
+    <rosparam command="load" file="$(find gazebo_example)/config/wx.yaml"/>
+    <!-- controller manager -->
+    <node name="controller_spawner_car" pkg="controller_manager" type="spawner" ns="/mbx"
+        args="wx_controller joint_state_controller"/>
+    <!--teleop control-->
+    <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_keyboard"  output="screen">
+    </node>
+  </group>
+  <!--wx_rotate node-->
+    <node name="wx_rotate_node" pkg="gazebo_example" type="wx_rotate_node">
+      <remap from="command" to="/mbx/wx_controller/command"/>
+    </node>
+
+
+</launch>

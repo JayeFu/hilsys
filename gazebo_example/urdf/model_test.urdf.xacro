@@ -1,0 +1,473 @@
+<?xml version="1.0"?>
+<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- variable -->
+    <xacro:property name="PI" value="3.1415926"/>
+    <xacro:property name="car_width" value="0.510"/>
+    <xacro:property name="car_length" value="0.754"/>
+    <xacro:property name="car_height" value="0.4"/>
+    <xacro:property name="wheel_length" value="0.05"/>
+    <xacro:property name="wheel_radius" value="0.15"/>
+    <xacro:property name="wheel_origin_xyz" value="0.0 0.0 0.0"/>
+    <xacro:property name="wheel_origin_rpy" value="${PI/2} ${PI/2} 0.0"/>
+
+    <!-- rviz color -->
+    <material name="blue">
+        <color rgba="0 0 1 1"/>
+    </material>
+
+    <material name="black">
+        <color rgba="0 0 0 1"/>
+    </material>
+    <material name="white">
+        <color rgba="1 1 1 1"/>
+    </material>
+    <material name="chain">
+        <color rgba="0.4 0 0.8 1"/>
+    </material>
+
+
+    <!-- macro -->
+    <xacro:macro name="default_inertial" params="mass">
+        <inertial>
+            <mass value="${mass}" />
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="box_geometry" params="width length height">
+        <geometry>
+            <box size="${width} ${length} ${height}"/>
+        </geometry>
+    </xacro:macro>
+
+    <xacro:macro name="cylinder_geometry" params="length radius">
+        <geometry>
+            <cylinder length="${length}" radius="${radius}"/>
+        </geometry>
+    </xacro:macro>
+
+    <xacro:macro name="default_origin" params="xyz rpyaw">
+        <origin xyz="${xyz}" rpy="${rpyaw}"/>
+    </xacro:macro>
+
+    <!-- links -->
+    <link name="car_link">
+        <visual>
+            <geometry>
+	        <mesh filename="package://gazebo_example/meshes/carnw.STL" />
+     	    </geometry>
+            <material name="blue"/>
+            <origin rpy="1.570796 0 0" xyz="0 0 0"/>
+        </visual>
+        <collision>
+            <geometry>
+	        <mesh filename="package://gazebo_example/meshes/carnw.STL" />
+     	    </geometry>
+            <origin rpy="1.570796 0 0" xyz="0 0 0"/>
+        </collision>
+        <xacro:default_inertial mass="3.0"/>
+
+    </link>
+
+    <!-- gazebo -->
+    <gazebo reference="car_link">
+        <material>Gazebo/SkyBlue</material>
+        <mu1>0.5</mu1>
+        <mu2>0.5</mu2>
+    </gazebo>
+
+    <!-- wheel joint macro -->
+    <!-- right:1 left:-1 -->
+    <xacro:macro name="wheel_car_joint" params="wheel_name front_end left_right">
+        <link name="${wheel_name}">
+            <visual>
+                <!--<xacro:cylinder_geometry length="${wheel_length}" radius="${wheel_radius}"/>-->
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/wheel.STL" />
+                </geometry>
+                <xacro:default_origin xyz="${wheel_origin_xyz}" rpyaw="${wheel_origin_rpy}" />
+                <material name="black"/>
+            </visual>
+            <collision>
+                <geometry>
+                <!--<xacro:cylinder_geometry length="${wheel_length}" radius="${wheel_radius}"/>-->
+                    <mesh filename="package://gazebo_example/meshes/wheel.STL" />
+                </geometry>
+                <xacro:default_origin xyz="${wheel_origin_xyz}" rpyaw="${wheel_origin_rpy}" />
+            </collision>
+            <xacro:default_inertial mass="1.0"/>
+        </link>
+
+        <!-- joints -->
+        <joint name="car_base_${wheel_name}" type="continuous">
+            <origin xyz="${front_end*0.282} ${left_right*0.275} -0.087" rpy="0.0 0.0 0.0"/>
+            <parent link="car_link"/>
+            <child link="${wheel_name}"/>
+            <axis xyz="0.0 1.0 0.0"/>
+        </joint>
+
+        <gazebo reference="${wheel_name}">
+            <material>Gazebo/Black</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+
+        <transmission name="${wheel_name}_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="car_base_${wheel_name}">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${wheel_name}_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+
+    <xacro:wheel_car_joint wheel_name="front_right_wheel" front_end="1.0" left_right="1.0"/>
+    <xacro:wheel_car_joint wheel_name="front_left_wheel" front_end="1.0" left_right="-1.0"/>
+    <xacro:wheel_car_joint wheel_name="end_right_wheel" front_end="-1.0" left_right="1.0"/>
+    <xacro:wheel_car_joint wheel_name="end_left_wheel" front_end="-1.0" left_right="-1.0"/>
+
+	<joint name="car2base_0" type = "fixed">
+		<parent link ="car_link"/>
+		<child link = "base_0"/>
+		<origin rpy =" 0 0.785398 0" xyz = "0.03 0 0.34"/>
+	</joint>
+	<link name="base_0">
+		<visual>
+			<geometry>
+				<box size="0.01 0.01 0.01" />
+     			</geometry>
+        		<material name="a">
+				<color rgba="0.2 0 0 1"/>
+			</material>	
+			<origin rpy="0 0 0" xyz="0 0 0"/>
+    		</visual>
+	</link>
+	<joint name="car2base" type = "fixed">
+		<parent link ="base_0"/>
+		<child link = "base"/>
+		<origin rpy =" 0 0 0.523599" xyz = "0 0 0"/>
+	</joint>
+
+
+        <link name="base">
+            <visual>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/base_link.STL" />
+                </geometry>
+                <origin rpy="1.570796 0 0" xyz="0 0 0"/>
+                <material name="white"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/base_link.STL" />
+                </geometry>
+                <origin rpy="1.570796 0 0" xyz="0 0 0"/>
+            </collision>
+            <xacro:default_inertial mass="0.6"/>
+        </link>
+        <gazebo reference="base">
+            <material>Gazebo/Red</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+
+    <xacro:macro name="base_connectball_joint" params="chain_num n1 n2 n3 n4 n5 n6">
+        <joint name="base2connectball${chain_num}" type = "revolute">
+		<parent link ="base"/>
+		<child link = "connect_ball${chain_num}"/>
+		<origin rpy =" ${n1} ${n2} ${n3}" xyz = "${n4} ${n5} ${n6}"/>
+		<limit effort="1000.0" lower="-0.5" upper="0.5" velocity="0.5"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<link name="connect_ball${chain_num}">
+		<visual>
+			<geometry>
+				<sphere radius="0.01"/>
+			</geometry>
+		</visual>
+                <collision>
+                    <geometry>
+	                <sphere radius="0.0001"/>
+                    </geometry>
+                </collision>
+                <xacro:default_inertial mass="0.001"/>
+	</link>
+        <gazebo reference="connect_ball${chain_num}">
+            <material>Gazebo/Black</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+
+        <transmission name="base2connectball${chain_num}_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="base2connectball${chain_num}">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="connect_ball${chain_num}_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+
+    <xacro:base_connectball_joint chain_num="1" n1="0.0" n2="0.14" n3="0.0" n4="0.04007" n5="-0.206142" n6="0.06393"/>
+    <xacro:base_connectball_joint chain_num="2" n1="0.0" n2="-0.13" n3="0.0" n4="-0.04007" n5="-0.206142" n6="0.06393"/>
+    <xacro:base_connectball_joint chain_num="3" n1="0.0" n2="-0.13" n3="0.0" n4="0.198559" n5="0.068369" n6="0.06393"/>
+    <xacro:base_connectball_joint chain_num="4" n1="0.0" n2="-0.28" n3="0.0" n4="0.158489" n5="0.137772" n6="0.06393"/>
+    <xacro:base_connectball_joint chain_num="5" n1="0.0" n2="0.14" n3="0.0" n4="-0.198559" n5="0.068369" n6="0.06393"/>
+    <xacro:base_connectball_joint chain_num="6" n1="0.0" n2="0.28" n3="0.0" n4="-0.158489" n5="0.137772" n6="0.06393"/>
+
+    <xacro:macro name="connectball_chain_joint" params="chain_num n1 n2 n3 n4 n5 n6">
+	<joint name="connectball2chain${chain_num}" type = "revolute">
+		<parent link ="connect_ball${chain_num}"/>
+		<child link = "chain${chain_num}_1"/>
+		<origin rpy =" ${n1} ${n2} ${n3}" xyz = "${n4} ${n5} ${n6}"/>
+		<limit effort="1000.0" lower="-0.5" upper="0.5" velocity="0.5"/>
+		<axis xyz="1 0 0"/>
+	</joint>
+	<link name="chain${chain_num}_1">
+             <visual>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/chain.STL" />
+                </geometry>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <material name="red"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/chain.STL" />
+                </geometry>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+            </collision>
+            <xacro:default_inertial mass="0.1"/>
+	</link>
+        <gazebo reference="chain${chain_num}_1">
+            <material>Gazebo/White</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+        <transmission name="connectball2chain${chain_num}_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="connectball2chain${chain_num}">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="chain${chain_num}_1_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+    <xacro:connectball_chain_joint chain_num="1" n1="-0.22" n2="0.0" n3="0.0" n4="0.0" n5="0.0" n6="0.0"/>
+    <xacro:connectball_chain_joint chain_num="2" n1="-0.22" n2="0.0" n3="0.0" n4="0.0" n5="0.0" n6="0.0"/>
+    <xacro:connectball_chain_joint chain_num="3" n1="0.25" n2="0.0" n3="0.0" n4="0.0" n5="0.0" n6="0.0"/>
+    <xacro:connectball_chain_joint chain_num="4" n1="-0.01" n2="0.0" n3="0.0" n4="0.0" n5="0.0" n6="0.0"/>
+    <xacro:connectball_chain_joint chain_num="5" n1="0.26" n2="0.0" n3="0.0" n4="0.0" n5="0.0" n6="0.0"/>
+    <xacro:connectball_chain_joint chain_num="6" n1="-0.01" n2="0.0" n3="0.0" n4="0.0" n5="0.0" n6="0.0"/>
+
+    <xacro:macro name="chain_chain_joint" params="chain_num n1 n2 n3 n4 n5 n6">
+	<joint name="chain2chain${chain_num}" type = "revolute"> <!--prismatic-->
+		<parent link ="chain${chain_num}_1"/>
+		<child link = "chain${chain_num}_2"/>
+		<origin rpy =" ${n1} ${n2} ${n3}" xyz = "${n4} ${n5} ${n6}"/>
+		<limit effort="1000.0" lower="-0.2" upper="0.2" velocity="0.5"/>
+		<axis xyz="0 0 1"/>
+	</joint>
+	<link name="chain${chain_num}_2">
+             <visual>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/chain_2.STL" />
+                </geometry>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <material name="red"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/chain_2.STL" />
+                </geometry>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+            </collision>
+            <xacro:default_inertial mass="0.05"/>
+	</link>
+        <gazebo reference="chain${chain_num}_2">
+            <material>Gazebo/Orange</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+        <transmission name="chain2chain${chain_num}_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="chain2chain${chain_num}">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="chain${chain_num}_2_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+    <xacro:chain_chain_joint chain_num="1" n1="0.0" n2="0.0" n3="2.5827825" n4="0.0" n5="0.0" n6="0.2"/>
+    <xacro:chain_chain_joint chain_num="2" n1="0.0" n2="0.0" n3="0.67881" n4="0.0" n5="0.0" n6="0.2"/>
+    <xacro:chain_chain_joint chain_num="3" n1="0.0" n2="0.0" n3="2.5673205" n4="0.0" n5="0.0" n6="0.2"/>
+    <xacro:chain_chain_joint chain_num="4" n1="0.0" n2="0.0" n3="4.7671776" n4="0.0" n5="0.0" n6="0.2"/>
+    <xacro:chain_chain_joint chain_num="5" n1="0.0" n2="0.0" n3="6.951573" n4="0.0" n5="0.0" n6="0.2"/>
+    <xacro:chain_chain_joint chain_num="6" n1="0.0" n2="0.0" n3="4.6476" n4="0.0" n5="0.0" n6="0.2"/>
+        <joint name="platform_support2base" type = "fixed"> <!--prismatic-->
+		<parent link ="base"/>
+		<child link = "platform_support"/>
+		<origin rpy ="0 0 0" xyz = "0 0 0.217"/>
+	</joint>
+	<link name="platform_support">
+             <visual>
+                <xacro:box_geometry length="0.02" width="0.02" height="0.434"/>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <material name="red"/>
+            </visual>
+            <collision>
+                <xacro:box_geometry length="0.02" width="0.02" height="0.434"/>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+            </collision>
+            <xacro:default_inertial mass="0.01"/>
+	</link>
+<!--platform-->
+	<joint name="support2platform" type = "fixed"> <!--prismatic-->
+		<parent link ="platform_support"/>
+		<child link = "platform"/>
+		<origin rpy ="0 0 0" xyz = "0 0 0.25"/>
+		<!--<limit effort="1000.0" lower="-0.2" upper="0.2" velocity="0.5"/>
+		<axis xyz="0 0 1"/>-->
+	</joint>
+	<link name="platform">
+             <visual>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/platform.STL" />
+                </geometry>
+                <origin rpy="-1.570796 0 0" xyz="0 0 0"/>
+                <material name="red"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/platform.STL" />
+                </geometry>
+                <origin rpy="-1.570796 0 0" xyz="0 0 0"/>
+            </collision>
+            <xacro:default_inertial mass="0.05"/>
+	</link>
+        <gazebo reference="platform">
+            <material>Gazebo/Green</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+       <!-- <transmission name="chain2chain${chain_num}_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="chain2chain${chain_num}">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="chain${chain_num}_2_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>-->
+<!--connect2wx-->
+	<joint name="platform2connect" type = "continuous"> 
+		<parent link ="platform"/>
+		<child link = "connect"/>
+		<origin rpy ="0 0 0" xyz = "0 0 0"/>
+		<axis xyz="0 0 1"/>
+	</joint>
+	<link name="connect">
+             <visual>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/connect2mz.STL" />
+                </geometry>
+                <origin rpy="1.570796 0 0" xyz="0 0 0"/>
+                <material name="red"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/connect2mz.STL" />
+                </geometry>
+                <origin rpy="1.570796 0 0" xyz="0 0 0"/>
+            </collision>
+            <xacro:default_inertial mass="0.01"/>
+	</link>
+        <gazebo reference="connect">
+            <material>Gazebo/Black</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+        <transmission name="platform_connect_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="platform2connect">
+                <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="platform2connect_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+        <joint name="connect2wx" type = "fixed"> <!--prismatic-->
+		<parent link ="connect"/>
+		<child link = "wx"/>
+		<origin rpy ="0 0 0" xyz = "0 0 0.7"/>
+		<!--<limit effort="1000.0" lower="-0.2" upper="0.2" velocity="0.5"/>
+		<axis xyz="0 0 1"/>-->
+	</joint>
+	<link name="wx">
+             <visual>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/MZ.STL" />
+                </geometry>
+                <origin rpy="3.1415926 0 0" xyz="0 0 0"/>
+                <material name="red"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/MZ.STL" />
+                </geometry>
+                <origin rpy="3.1415926 0 0" xyz="0 0 0"/>
+            </collision>
+            <xacro:default_inertial mass="0.1"/>
+	</link>
+        <gazebo reference="wx">
+            <material>Gazebo/SkyBlue</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+       <!-- <transmission name="chain2chain${chain_num}_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="chain2chain${chain_num}">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="chain${chain_num}_2_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>-->
+
+
+
+
+    <!-- base_link -->
+    <!--link name="base_link"/>
+    <joint name="base_link_car" type="fixed">
+        <origin xyz="0.0 0.0 ${wheel_radius}" rpy="0.0 0.0 PI"/>
+        <parent link="base_link"/>
+        <child link="car_link"/>
+    </joint-->
+
+    <!-- ros_control plugin -->
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/mbx</robotNamespace>
+            <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+            <legacyModeNS>true</legacyModeNS> 
+        </plugin>
+    </gazebo>
+<!--move_base plugin -->
+  <gazebo>
+    <plugin name="base_controller" filename="libgazebo_ros_planar_move.so">
+      <commandTopic>cmd_vel</commandTopic>
+      <odometryTopic>odom</odometryTopic>
+      <odometryFrame>odom</odometryFrame>
+      <odometryRate>20.0</odometryRate>
+      <robotBaseFrame>car_link</robotBaseFrame>
+    </plugin>
+  </gazebo>
+
+
+</robot>

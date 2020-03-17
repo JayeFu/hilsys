@@ -1,0 +1,197 @@
+<?xml version="1.0"?>
+<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- variable -->
+    <xacro:property name="PI" value="3.1415926"/>
+    <xacro:property name="car_width" value="0.510"/>
+    <xacro:property name="car_length" value="0.754"/>
+    <xacro:property name="car_height" value="0.4"/>
+    <xacro:property name="wheel_length" value="0.05"/>
+    <xacro:property name="wheel_radius" value="0.15"/>
+    <xacro:property name="wheel_origin_xyz" value="0.0 0.0 0.0"/>
+    <xacro:property name="wheel_origin_rpy" value="${PI/2} ${PI/2} 0.0"/>
+
+    <xacro:property name="ns" value="$(arg ns)/" />
+
+    <!-- rviz color -->
+    <material name="blue">
+        <color rgba="0 0 1 1"/>
+    </material>
+
+    <material name="black">
+        <color rgba="0 0 0 1"/>
+    </material>
+    <material name="white">
+        <color rgba="1 1 1 1"/>
+    </material>
+
+    <!-- macro -->
+    <xacro:macro name="default_inertial" params="mass">
+        <inertial>
+            <mass value="${mass}" />
+            <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="box_geometry" params="width length height">
+        <geometry>
+            <box size="${width} ${length} ${height}"/>
+        </geometry>
+    </xacro:macro>
+
+    <xacro:macro name="cylinder_geometry" params="length radius">
+        <geometry>
+            <cylinder length="${length}" radius="${radius}"/>
+        </geometry>
+    </xacro:macro>
+
+    <xacro:macro name="default_origin" params="xyz rpyaw">
+        <origin xyz="${xyz}" rpy="${rpyaw}"/>
+    </xacro:macro>
+
+    <!-- links -->
+    <link name="${ns}car_link">
+        <visual>
+            <geometry>
+	        <mesh filename="package://gazebo_example/meshes/carnw.STL" />
+     	    </geometry>
+            <material name="blue"/>
+            <origin rpy="1.570796 0 0" xyz="0 0 0"/>
+        </visual>
+        <collision>
+            <geometry>
+	        <mesh filename="package://gazebo_example/meshes/carnw.STL" />
+     	    </geometry>
+            <origin rpy="1.570796 0 0" xyz="0 0 0"/>
+        </collision>
+        <xacro:default_inertial mass="3.0"/>
+
+    </link>
+
+    <!-- gazebo -->
+    <gazebo reference="${ns}car_link">
+        <material>Gazebo/SkyBlue</material>
+        <mu1>0.5</mu1>
+        <mu2>0.5</mu2>
+    </gazebo>
+
+    <!-- wheel joint macro -->
+    <!-- right:1 left:-1 -->
+    <xacro:macro name="wheel_car_joint" params="wheel_name front_end left_right">
+        <link name="${wheel_name}">
+            <visual>
+                <!--<xacro:cylinder_geometry length="${wheel_length}" radius="${wheel_radius}"/>-->
+                <geometry>
+                    <mesh filename="package://gazebo_example/meshes/wheel.STL" />
+                </geometry>
+                <xacro:default_origin xyz="${wheel_origin_xyz}" rpyaw="${wheel_origin_rpy}" />
+                <material name="black"/>
+            </visual>
+            <collision>
+                <geometry>
+                <!--<xacro:cylinder_geometry length="${wheel_length}" radius="${wheel_radius}"/>-->
+                    <mesh filename="package://gazebo_example/meshes/wheel.STL" />
+                </geometry>
+                <xacro:default_origin xyz="${wheel_origin_xyz}" rpyaw="${wheel_origin_rpy}" />
+            </collision>
+            <xacro:default_inertial mass="1.0"/>
+        </link>
+
+        <!-- joints -->
+        <joint name="${wheel_name}" type="continuous">
+            <origin xyz="${front_end*0.282} ${left_right*0.275} -0.087" rpy="0.0 0.0 0.0"/>
+            <parent link="${ns}car_link"/>
+            <child link="${wheel_name}"/>
+            <axis xyz="0.0 1.0 0.0"/>
+        </joint>
+
+        <gazebo reference="${wheel_name}">
+            <material>Gazebo/Black</material>
+            <mu1>0.5</mu1>
+            <mu2>0.5</mu2>
+        </gazebo>
+
+
+    </xacro:macro>
+
+    <xacro:wheel_car_joint wheel_name="${ns}front_right_wheel" front_end="1.0" left_right="1.0"/>
+    <xacro:wheel_car_joint wheel_name="${ns}front_left_wheel" front_end="1.0" left_right="-1.0"/>
+    <xacro:wheel_car_joint wheel_name="${ns}end_right_wheel" front_end="-1.0" left_right="1.0"/>
+    <xacro:wheel_car_joint wheel_name="${ns}end_left_wheel" front_end="-1.0" left_right="-1.0"/>
+
+        <transmission name="front_right_wheel_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${ns}front_right_wheel">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="front_right_wheel_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+
+        <transmission name="front_left_wheel_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${ns}front_left_wheel">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="front_left_wheel_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+
+        <transmission name="end_right_wheel_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${ns}end_right_wheel">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="end_right_wheel_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+
+        <transmission name="end_left_wheel_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${ns}end_left_wheel">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="end_left_wheel_motor">
+                <mechanicalReducction>1</mechanicalReducction>
+            </actuator>
+        </transmission>
+    <!-- base_link -->
+    <!--<link name="base_link"/>
+    <joint name="base_link_car" type="fixed">
+        <origin xyz="0.0 0.0 ${wheel_radius}" rpy="0.0 0.0 0.0"/>
+        <parent link="base_link"/>
+        <child link="car_link"/>
+    </joint>-->
+
+    <!-- plagin -->
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/car</robotNamespace>
+            <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+            <legacyModeNS>true</legacyModeNS>
+        </plugin>
+    </gazebo>
+
+    <!--<gazebo>
+        <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>50.0</updateRate>
+            <leftJoint>car_base_front_left_wheel</leftJoint>
+            <rightJoint>car_base_front_right_wheel</rightJoint>
+            <wheelSeparation>1.0</wheelSeparation>
+            <wheelDiameter>0.5</wheelDiameter>
+            <torque>1.0</torque>
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryTopic>odom</odometryTopic>
+            <odometryFrame>odom</odometryFrame>
+            <robotBaseFrame>base_link</robotBaseFrame>
+            <publishWheelTF>true</publishWheelTF>
+            <publishWheelJointState>true</publishWheelJointState>
+            <legecyMode>false</legecyMode>
+            <wheelAcceleration>1</wheelAcceleration>
+        </plugin>
+    </gazebo>-->
+
+</robot>

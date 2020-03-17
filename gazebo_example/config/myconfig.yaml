@@ -1,0 +1,37 @@
+
+  joint_state_controller:
+    type: "joint_state_controller/JointStateController"
+    publish_rate: 50
+
+  wheel1_position_controller:
+    type: "effort_controllers/JointEffortController"
+    joint: car/front_right_wheel
+    pid: {p: 100.0, i: 0.01, d: 10.0}
+  wheel2_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: car/front_left_wheel
+    pid: {p: 100.0, i: 0.01, d: 10.0}
+  wheel3_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: car/end_right_wheel
+    pid: {p: 100.0, i: 0.01, d: 10.0}
+  wheel4_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: car/end_left_wheel
+    pid: {p: 100.0, i: 0.01, d: 10.0}
+
+
+#  base_frame_id: base_link
+
+#    linear:
+#      x:
+#        has_velocity_limits    : true
+#        max_velocity           : 0.2   # m/s
+#        has_acceleration_limits: true
+#        max_acceleration       : 0.6   # m/s^2
+#    angular:
+#      z:
+#        has_velocity_limits    : true
+#        max_velocity           : 2.0   # rad/s
+#        has_acceleration_limits: true
+#        max_acceleration       : 6.0   # rad/s^2

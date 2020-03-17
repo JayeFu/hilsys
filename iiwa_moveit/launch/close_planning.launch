@@ -1,0 +1,7 @@
+<launch>
+  <node name="come_close_node" pkg="gazebo_example" type="come_close_node"/>
+  <node name="move_group_whole_system" pkg="iiwa_moveit" type="move_group_whole_system.py" output="screen"/>
+  
+
+</launch>
+  

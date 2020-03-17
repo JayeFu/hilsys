@@ -1,0 +1,14 @@
+/mbx:
+  joint_state_controller:
+    type: "joint_state_controller/JointStateController"
+    publish_rate: 50
+
+
+  wx_controller:
+    type: "position_controllers/JointPositionController"
+    joint: mbx/platform2connect
+    pid: 
+      p: 100.0
+      i: 0.01
+      d: 10.0
+

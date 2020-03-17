@@ -1,0 +1,55 @@
+<!--d-->
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <!--<arg name="model" default="$(find gazebo_example)/urdf/ur10_robot.urdf.xacro"/>-->
+
+  <!-- gazebo empty world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!--namespace: arm-->
+
+    <!--param name="tf_prefix" value="arm_tf" /-->
+    <param name="robot_description" command="$(find xacro)/xacro $(find kuka_lbr_iiwa_support)/urdf/lbr_iiwa_14_r820.xacro" />
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+        args="-x 0 -unpause -urdf -model iiwa -param robot_description" respawn="false" output="screen" />
+    <!-- load controller yaml -->
+
+    <!-- controller manager -->
+    <!--rosparam command="load" file="$(find gazebo_example)/config/myconfig_test_x10.yaml"/>
+    <node name="controller_spawner_arm" pkg="controller_manager" type="spawner" 
+        args="joint_state_controller joint1_position_controller joint2_position_controller joint3_position_controller joint4_position_controller 
+         joint5_position_controller joint6_position_controller"/-->
+
+  <node pkg="rostopic" type="rostopic" name="fake_joint_calibration"
+        args="pub /calibrated std_msgs/Bool true" />
+  
+  <!-- joint_state_controller -->
+  <rosparam file="$(find kuka_lbr_iiwa_support)/config/joint_state_controller.yaml" command="load"/>
+  <node name="joint_state_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn joint_state_controller" respawn="false" output="screen"/>
+
+   <!--<include file="$(find neo_simulation)/config/controller/launch/controller_utils.launch"/>-->
+
+  <rosparam file="$(find kuka_lbr_iiwa_support)/config/arm_controller_ur10.yaml" command="load"/>
+  <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn arm_controller" respawn="false" output="screen"/>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+ 
+
+
+
+<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
+</launch>
